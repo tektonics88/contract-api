@@ -23,10 +23,12 @@ const RISK_CATEGORIES = [
   'Auto-renewal clauses',
   'Non-compete / non-solicit',
   'IP assignment / ownership',
-  'Dispute resolution (arbitration, governing law, venue)',
+  'Dispute resolution (arbitration, venue)',
+  'Governing law / jurisdiction',
   'Payment terms and penalties',
   'Confidentiality obligations',
   'Warranty disclaimers',
+  'Assignment / change of control',
 ];
 
 // The JSON shape the model must return. Kept in sync with what /analyze returns.

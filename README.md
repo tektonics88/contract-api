@@ -191,8 +191,9 @@ curl -X POST localhost:3000/analyze \
 
 Indemnification · limitation of liability / liability caps · termination ·
 auto-renewal · non-compete / non-solicit · IP assignment / ownership ·
-dispute resolution (arbitration, governing law, venue) · payment terms and
-penalties · confidentiality obligations · warranty disclaimers.
+dispute resolution (arbitration, venue) · governing law / jurisdiction ·
+payment terms and penalties · confidentiality obligations · warranty
+disclaimers · assignment / change of control.
 
 The analysis assumes the reviewer is the counterparty being asked to sign
 (not the drafting party).
