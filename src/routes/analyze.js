@@ -5,6 +5,8 @@ const multer = require('multer');
 const config = require('../config');
 const { extractTextFromPdf } = require('../services/pdf');
 const { analyzeContract } = require('../services/claude');
+const { requireApiKey } = require('../middleware/auth');
+const { logUsage } = require('../db/supabase');
 
 const router = express.Router();
 
@@ -62,7 +64,8 @@ async function resolveContractText(req) {
  * Accepts a PDF upload OR raw contract text, runs Claude risk analysis,
  * and returns a structured JSON result.
  */
-router.post('/', upload.single('file'), async (req, res, next) => {
+router.post('/', requireApiKey, upload.single('file'), async (req, res, next) => {
+  const apiKeyId = req.auth ? req.auth.apiKeyId : null;
   try {
     const { text, source } = await resolveContractText(req);
 
@@ -75,6 +78,17 @@ router.post('/', upload.single('file'), async (req, res, next) => {
 
     const { analysis, usage, model } = await analyzeContract(text);
 
+    logUsage({
+      api_key_id: apiKeyId,
+      endpoint: 'POST /analyze',
+      status_code: 200,
+      source,
+      characters_analyzed: text.length,
+      model,
+      input_tokens: usage ? usage.input_tokens : null,
+      output_tokens: usage ? usage.output_tokens : null,
+    });
+
     res.json({
       source,
       characters_analyzed: text.length,
@@ -83,6 +97,13 @@ router.post('/', upload.single('file'), async (req, res, next) => {
       result: analysis,
     });
   } catch (err) {
+    // Record failed attempts too (best-effort) for observability.
+    logUsage({
+      api_key_id: apiKeyId,
+      endpoint: 'POST /analyze',
+      status_code: err.status || 500,
+      error: err.publicMessage || err.message,
+    });
     next(err);
   }
 });
