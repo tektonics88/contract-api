@@ -4,6 +4,11 @@ const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
 const config = require('../config');
 
+/** True when Supabase credentials are present. */
+function isConfigured() {
+  return Boolean(config.supabase.url && config.supabase.serviceKey);
+}
+
 // Lazily create a single Supabase client using the service-role key. This key
 // bypasses row-level security and must only ever be used server-side.
 let client;
@@ -53,6 +58,7 @@ async function findActiveApiKey(plaintextKey) {
 
 /** Updates last_used_at for a key. Fire-and-forget; never blocks a request. */
 function touchApiKey(apiKeyId) {
+  if (!isConfigured() || !apiKeyId) return;
   getClient()
     .from('api_keys')
     .update({ last_used_at: new Date().toISOString() })
@@ -67,6 +73,9 @@ function touchApiKey(apiKeyId) {
  * response the client already received.
  */
 function logUsage(entry) {
+  // Observability only — silently skip when the DB isn't configured so the
+  // core /analyze flow can run without Supabase (e.g. dev / no-auth mode).
+  if (!isConfigured()) return;
   getClient()
     .from('usage_logs')
     .insert(entry)
@@ -77,6 +86,7 @@ function logUsage(entry) {
 
 module.exports = {
   getClient,
+  isConfigured,
   hashApiKey,
   findActiveApiKey,
   touchApiKey,

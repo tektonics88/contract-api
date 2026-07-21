@@ -1,5 +1,6 @@
 'use strict';
 
+const config = require('../config');
 const { findActiveApiKey, touchApiKey } = require('../db/supabase');
 
 /**
@@ -27,6 +28,12 @@ function extractKey(req) {
  */
 async function requireApiKey(req, res, next) {
   try {
+    // Dev-only bypass: skip auth entirely so /analyze works without Supabase.
+    if (config.disableAuth) {
+      req.auth = { apiKeyId: null, userId: null, keyPrefix: 'dev-no-auth' };
+      return next();
+    }
+
     const key = extractKey(req);
     if (!key) {
       return res.status(401).json({

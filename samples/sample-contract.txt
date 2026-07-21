@@ -1,0 +1,77 @@
+MASTER SERVICES AGREEMENT
+
+This Master Services Agreement ("Agreement") is entered into as of the
+Effective Date by and between Acme Vendor LLC ("Provider") and the
+undersigned customer ("Client").
+
+1. SERVICES
+Provider shall provide the software development and consulting services
+described in one or more Statements of Work ("SOW").
+
+2. TERM AND AUTO-RENEWAL
+This Agreement shall commence on the Effective Date and continue for an
+initial term of one (1) year. Thereafter, this Agreement shall
+automatically renew for successive one (1) year terms unless Client
+provides written notice of non-renewal no later than ninety (90) days
+prior to the end of the then-current term. Fees may increase by up to
+fifteen percent (15%) upon each renewal at Provider's sole discretion.
+
+3. FEES AND PAYMENT
+Client shall pay all invoices within fifteen (15) days of receipt. Any
+amount not paid when due shall accrue interest at the rate of one and
+one-half percent (1.5%) per month. Provider may suspend all services
+immediately if any invoice is more than five (5) days past due.
+
+4. TERMINATION
+Provider may terminate this Agreement at any time, for any reason or no
+reason, upon ten (10) days written notice to Client. Client may terminate
+only for Provider's uncured material breach following a sixty (60) day
+cure period. Upon termination, all prepaid fees are non-refundable.
+
+5. INDEMNIFICATION
+Client shall defend, indemnify, and hold harmless Provider and its
+officers, directors, employees, and agents from and against any and all
+claims, damages, losses, liabilities, costs, and expenses (including
+attorneys' fees) arising out of or relating to this Agreement, regardless
+of the cause and even if caused by Provider's own negligence.
+
+6. LIMITATION OF LIABILITY
+IN NO EVENT SHALL PROVIDER'S TOTAL LIABILITY EXCEED ONE HUNDRED DOLLARS
+($100). PROVIDER SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, OR
+CONSEQUENTIAL DAMAGES. CLIENT'S LIABILITY UNDER THIS AGREEMENT SHALL NOT
+BE SUBJECT TO ANY CAP OR LIMITATION.
+
+7. INTELLECTUAL PROPERTY
+All work product, deliverables, inventions, and materials created by
+Client in connection with this Agreement, including any pre-existing
+Client materials incorporated therein, shall be the sole and exclusive
+property of Provider.
+
+8. NON-COMPETE
+During the term and for a period of three (3) years thereafter, Client
+shall not, anywhere in the world, engage or invest in any business that
+competes with Provider or engage any of Provider's personnel.
+
+9. CONFIDENTIALITY
+Client shall keep confidential all information disclosed by Provider. This
+obligation survives indefinitely. Provider has no corresponding
+confidentiality obligation with respect to Client's information.
+
+10. DISPUTE RESOLUTION
+Any dispute shall be resolved by binding arbitration administered in
+Provider's home jurisdiction. Client waives any right to a jury trial and
+any right to participate in a class action. The prevailing party shall be
+Provider.
+
+11. GOVERNING LAW
+This Agreement shall be governed by the laws of the jurisdiction in which
+Provider maintains its principal place of business, without regard to
+conflict-of-laws principles.
+
+12. ASSIGNMENT
+Provider may assign this Agreement to any party without notice or consent.
+Client may not assign this Agreement without Provider's prior written
+consent, which may be withheld for any reason.
+
+IN WITNESS WHEREOF, the parties have executed this Agreement as of the
+Effective Date.

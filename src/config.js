@@ -10,6 +10,11 @@ const config = {
   port: parseInt(process.env.PORT, 10) || 3000,
   nodeEnv: process.env.NODE_ENV || 'development',
 
+  // Dev escape hatch: when true, /analyze skips API-key auth entirely so the
+  // core analysis flow can be tested without Supabase. Opt-in only, and
+  // refused in production (see index.js). NEVER enable this in production.
+  disableAuth: process.env.DISABLE_AUTH === 'true',
+
   anthropic: {
     apiKey: process.env.ANTHROPIC_API_KEY || '',
     // Default model for contract analysis. Overridable via env for iteration.
