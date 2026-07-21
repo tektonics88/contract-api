@@ -6,6 +6,7 @@ const config = require('../config');
 const { extractTextFromPdf } = require('../services/pdf');
 const { analyzeContract } = require('../services/claude');
 const { requireApiKey } = require('../middleware/auth');
+const { apiKeyRateLimiter } = require('../middleware/rateLimit');
 const { logUsage } = require('../db/supabase');
 
 const router = express.Router();
@@ -64,7 +65,7 @@ async function resolveContractText(req) {
  * Accepts a PDF upload OR raw contract text, runs Claude risk analysis,
  * and returns a structured JSON result.
  */
-router.post('/', requireApiKey, upload.single('file'), async (req, res, next) => {
+router.post('/', requireApiKey, apiKeyRateLimiter, upload.single('file'), async (req, res, next) => {
   const apiKeyId = req.auth ? req.auth.apiKeyId : null;
   try {
     const { text, source } = await resolveContractText(req);
