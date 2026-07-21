@@ -44,22 +44,22 @@ function summarizeResult(result) {
     fail('response missing "result" object');
     return;
   }
-  const { overall_risk, flagged_clauses, missing_protections } = result;
-  if (['low', 'medium', 'high'].includes(overall_risk)) {
-    pass(`overall_risk = "${overall_risk}"`);
+  const { overall_risk_level, clauses, missing_protections } = result;
+  if (['low', 'medium', 'high'].includes(overall_risk_level)) {
+    pass(`overall_risk_level = "${overall_risk_level}"`);
   } else {
-    fail(`overall_risk invalid: ${JSON.stringify(overall_risk)}`);
+    fail(`overall_risk_level invalid: ${JSON.stringify(overall_risk_level)}`);
   }
-  if (Array.isArray(flagged_clauses) && flagged_clauses.length > 0) {
-    pass(`${flagged_clauses.length} flagged clause(s)`);
+  if (Array.isArray(clauses) && clauses.length > 0) {
+    pass(`${clauses.length} clause(s) flagged`);
     console.log(
-      flagged_clauses
+      clauses
         .slice(0, 6)
-        .map((c) => `      - [${c.risk_level}] ${c.clause_name}`)
+        .map((c) => `      - [${c.risk_level}] ${c.clause_type}${c.section ? ` (${c.section})` : ''}`)
         .join('\n')
     );
   } else {
-    fail('flagged_clauses missing or empty');
+    fail('clauses missing or empty');
   }
   if (Array.isArray(missing_protections)) {
     pass(`${missing_protections.length} missing protection(s) noted`);

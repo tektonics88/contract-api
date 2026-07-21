@@ -155,12 +155,13 @@ curl -X POST localhost:3000/analyze \
   "characters_analyzed": 3457,
   "model": "claude-sonnet-5",
   "usage": { "input_tokens": 1234, "output_tokens": 890 },
+  "disclaimer": "This automated analysis is provided to aid contract review and is not legal advice ...",
   "result": {
-    "overall_risk": "high",
-    "risk_summary": "This agreement is heavily one-sided in the Provider's favor ...",
-    "flagged_clauses": [
+    "overall_risk_level": "high",
+    "overall_summary": "This agreement is heavily one-sided in the Provider's favor ...",
+    "clauses": [
       {
-        "clause_name": "Indemnification",
+        "clause_type": "Indemnification",
         "risk_level": "high",
         "section": "Section 5",
         "excerpt": "Client shall defend, indemnify, and hold harmless Provider ...",
@@ -170,7 +171,7 @@ curl -X POST localhost:3000/analyze \
     ],
     "missing_protections": [
       {
-        "protection": "Mutual limitation of liability",
+        "clause_type": "Mutual limitation of liability",
         "explanation": "The Client's liability is uncapped while the Provider's is capped at $100.",
         "recommendation": "Negotiate a mutual, reasonable liability cap."
       }
@@ -179,6 +180,8 @@ curl -X POST localhost:3000/analyze \
 }
 ```
 
+> The response is not legal advice — see the `disclaimer` field returned with every analysis.
+
 **Error responses** use `{ "error": "..." }` with appropriate status codes:
 `400` (bad/empty input, unparseable PDF), `401` (missing/invalid key),
 `413` (contract too long), `429` (rate limit exceeded), `500`/`502`
@@ -186,10 +189,13 @@ curl -X POST localhost:3000/analyze \
 
 ### Risk categories scrutinized
 
-Indemnification · liability caps · auto-renewal · termination · non-compete ·
-IP assignment · dispute resolution/arbitration · confidentiality/NDA scope ·
-payment/late fees · governing law/jurisdiction · warranties/disclaimers ·
-assignment/change of control. Other notable clauses may also be flagged.
+Indemnification · limitation of liability / liability caps · termination ·
+auto-renewal · non-compete / non-solicit · IP assignment / ownership ·
+dispute resolution (arbitration, governing law, venue) · payment terms and
+penalties · confidentiality obligations · warranty disclaimers.
+
+The analysis assumes the reviewer is the counterparty being asked to sign
+(not the drafting party).
 
 ## Rate limiting
 

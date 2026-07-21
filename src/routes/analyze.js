@@ -5,6 +5,7 @@ const multer = require('multer');
 const config = require('../config');
 const { extractTextFromPdf } = require('../services/pdf');
 const { analyzeContract } = require('../services/claude');
+const { DISCLAIMER } = require('../services/prompt');
 const { requireApiKey } = require('../middleware/auth');
 const { apiKeyRateLimiter } = require('../middleware/rateLimit');
 const { logUsage } = require('../db/supabase');
@@ -95,6 +96,7 @@ router.post('/', requireApiKey, apiKeyRateLimiter, upload.single('file'), async 
       characters_analyzed: text.length,
       model,
       usage,
+      disclaimer: DISCLAIMER,
       result: analysis,
     });
   } catch (err) {
