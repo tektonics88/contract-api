@@ -55,7 +55,11 @@ function summarizeResult(result) {
     console.log(
       clauses
         .slice(0, 6)
-        .map((c) => `      - [${c.risk_level}] ${c.clause_type}${c.section ? ` (${c.section})` : ''}`)
+        .map(
+          (c) =>
+            `      - [${c.risk_level}/conf:${c.confidence}] ${c.clause_type}` +
+            `${c.section ? ` (${c.section})` : ''} ${c.excerpt_verified ? '✓cited' : '⚠unverified'}`
+        )
         .join('\n')
     );
   } else {
@@ -66,6 +70,20 @@ function summarizeResult(result) {
   } else {
     fail('missing_protections missing');
   }
+  if (result.citation_summary) {
+    const cs = result.citation_summary;
+    pass(`citations: ${cs.verified}/${cs.total_excerpts} excerpts verified against source`);
+  }
+  if (Array.isArray(result.playbook_findings)) {
+    pass(`${result.playbook_findings.length} playbook finding(s)`);
+    console.log(
+      result.playbook_findings
+        .slice(0, 6)
+        .map((p) => `      - [${p.status}] ${p.rule}`)
+        .join('\n')
+    );
+  }
+  if (result.contract_type) pass(`detected/echoed contract_type = "${result.contract_type}"`);
 }
 
 async function testHealth() {
@@ -97,12 +115,21 @@ async function testNoAuth() {
 }
 
 async function testText() {
-  console.log('\n[3] POST /analyze with raw text (JSON)');
+  console.log('\n[3] POST /analyze with raw text + options (party_side, contract_type, playbook)');
   const contract = fs.readFileSync(TXT_PATH, 'utf8');
   const r = await fetch(`${BASE}/analyze`, {
     method: 'POST',
     headers: authHeaders({ 'Content-Type': 'application/json' }),
-    body: JSON.stringify({ text: contract }),
+    body: JSON.stringify({
+      text: contract,
+      contract_type: 'Master Services Agreement',
+      party_side: 'Client (the party being asked to sign)',
+      playbook: [
+        'Liability must be capped at no more than 12 months of fees.',
+        'We require at least 30 days notice for termination for convenience.',
+        'Auto-renewal is only acceptable with 60 days or less notice to cancel.',
+      ],
+    }),
   });
   const body = await r.json();
   if (r.status !== 200) {
@@ -110,6 +137,9 @@ async function testText() {
     return;
   }
   pass(`HTTP 200 (source=${body.source}, chars=${body.characters_analyzed})`);
+  if (body.options_applied) {
+    pass(`options_applied: ${JSON.stringify(body.options_applied)}`);
+  }
   summarizeResult(body.result);
 }
 

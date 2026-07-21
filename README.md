@@ -147,6 +147,29 @@ curl -X POST localhost:3000/analyze \
   -F "file=@samples/sample-contract.pdf"
 ```
 
+**Optional parameters** (JSON body fields, or multipart form fields alongside `file`):
+
+| Field | Type | Effect |
+|-------|------|--------|
+| `contract_type` | string | Analyze as this type (e.g. `"NDA"`, `"MSA"`). If omitted, the type is auto-detected and returned in `result.contract_type`. |
+| `party_side` | string | Analyze from this party's perspective (e.g. `"Client"`, `"Employee"`, `"Buyer"`). If omitted, defaults to the party being asked to sign. |
+| `playbook` | string \| string[] | Your policy positions. Each is checked against the contract and returned in `result.playbook_findings` as `meets` / `violates` / `not_addressed`. Accepts a free-text block or an array of rule strings. |
+
+```bash
+curl -X POST localhost:3000/analyze \
+  -H "Authorization: Bearer sk_your_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "MASTER SERVICES AGREEMENT ...",
+    "contract_type": "Master Services Agreement",
+    "party_side": "Client",
+    "playbook": [
+      "Liability must be capped at no more than 12 months of fees.",
+      "Termination for convenience must allow at least 30 days notice."
+    ]
+  }'
+```
+
 **Response (200):**
 
 ```json
@@ -155,18 +178,29 @@ curl -X POST localhost:3000/analyze \
   "characters_analyzed": 3457,
   "model": "claude-sonnet-5",
   "usage": { "input_tokens": 1234, "output_tokens": 890 },
+  "options_applied": {
+    "contract_type": "Master Services Agreement",
+    "party_side": "Client",
+    "playbook_provided": true
+  },
   "disclaimer": "This automated analysis is provided to aid contract review and is not legal advice ...",
   "result": {
+    "contract_type": "Master Services Agreement",
+    "party_side": "Client (the party being asked to sign)",
     "overall_risk_level": "high",
     "overall_summary": "This agreement is heavily one-sided in the Provider's favor ...",
+    "citation_summary": { "total_excerpts": 9, "verified": 9, "unverified": 0 },
     "clauses": [
       {
         "clause_type": "Indemnification",
         "risk_level": "high",
+        "confidence": "high",
         "section": "Section 5",
         "excerpt": "Client shall defend, indemnify, and hold harmless Provider ...",
         "explanation": "One-way indemnity requiring the Client to cover even the Provider's own negligence.",
-        "recommendation": "Make indemnification mutual and carve out the Provider's negligence."
+        "recommendation": "Make indemnification mutual and carve out the Provider's negligence.",
+        "location": { "char_start": 1620, "char_end": 1698 },
+        "excerpt_verified": true
       }
     ],
     "missing_protections": [
@@ -175,10 +209,26 @@ curl -X POST localhost:3000/analyze \
         "explanation": "The Client's liability is uncapped while the Provider's is capped at $100.",
         "recommendation": "Negotiate a mutual, reasonable liability cap."
       }
+    ],
+    "playbook_findings": [
+      {
+        "rule": "Liability must be capped at no more than 12 months of fees.",
+        "status": "violates",
+        "excerpt": "IN NO EVENT SHALL PROVIDER'S TOTAL LIABILITY EXCEED ONE HUNDRED DOLLARS ($100).",
+        "explanation": "The Provider's cap is a flat $100 and the Client's liability is uncapped.",
+        "recommendation": "Replace with a mutual cap tied to fees paid in the prior 12 months.",
+        "location": { "char_start": 1993, "char_end": 2071 },
+        "excerpt_verified": true
+      }
     ]
   }
 }
 ```
+
+**Trust features:**
+- **`confidence`** (per clause) — the model's confidence the finding is accurate, for triage.
+- **`location` + `excerpt_verified`** — every excerpt is located in the source text **server-side**. `location` gives character offsets a UI can highlight; `excerpt_verified: false` means the excerpt could not be found in the source (a signal the model may have paraphrased it). `citation_summary` totals this per response.
+- **`playbook_findings`** — per-rule compliance against your own standards, not just generic risk.
 
 > The response is not legal advice — see the `disclaimer` field returned with every analysis.
 
@@ -195,8 +245,8 @@ dispute resolution (arbitration, venue) · governing law / jurisdiction ·
 payment terms and penalties · confidentiality obligations · warranty
 disclaimers · assignment / change of control.
 
-The analysis assumes the reviewer is the counterparty being asked to sign
-(not the drafting party).
+By default the analysis is from the perspective of the party being asked to
+sign; override it with the `party_side` parameter.
 
 ## Rate limiting
 

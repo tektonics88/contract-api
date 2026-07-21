@@ -48,16 +48,17 @@ function parseJsonResponse(text) {
 /**
  * Sends contract text to Claude and returns the parsed structured analysis.
  * @param {string} contractText
+ * @param {{contractType?: string, partySide?: string, playbook?: string}} [options]
  * @returns {Promise<object>} parsed analysis matching the documented schema
  */
-async function analyzeContract(contractText) {
+async function analyzeContract(contractText, options = {}) {
   const anthropic = getClient();
 
   const message = await anthropic.messages.create({
     model: config.anthropic.model,
     max_tokens: config.anthropic.maxTokens,
     system: SYSTEM_PROMPT,
-    messages: [{ role: 'user', content: buildAnalysisPrompt(contractText) }],
+    messages: [{ role: 'user', content: buildAnalysisPrompt(contractText, options) }],
   });
 
   const textBlock = message.content.find((b) => b.type === 'text');
