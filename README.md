@@ -108,6 +108,16 @@ DISABLE_AUTH=true npm start
 
 The server refuses to start with `DISABLE_AUTH=true` when `NODE_ENV=production`.
 
+## Unit tests
+
+Fast, dependency-free tests (Node's built-in runner) covering the pure logic —
+citation verification, option parsing, prompt assembly, JSON-response parsing,
+and PDF/DOCX extraction against the sample files. No server or API key needed:
+
+```bash
+npm test
+```
+
 ## End-to-end test
 
 With the server running:
