@@ -19,7 +19,7 @@ const config = {
     apiKey: process.env.ANTHROPIC_API_KEY || '',
     // Default model for contract analysis. Overridable via env for iteration.
     model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-5',
-    maxTokens: parseInt(process.env.ANTHROPIC_MAX_TOKENS, 10) || 4096,
+    maxTokens: parseInt(process.env.ANTHROPIC_MAX_TOKENS, 10) || 8192,
   },
 
   supabase: {

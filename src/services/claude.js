@@ -3,6 +3,7 @@
 const Anthropic = require('@anthropic-ai/sdk');
 const config = require('../config');
 const { SYSTEM_PROMPT, buildAnalysisPrompt } = require('./prompt');
+const { buildOutputJsonSchema } = require('./schema');
 
 // Instantiate lazily so the app can boot (e.g. for /health) even if the key
 // isn't set, and so tests can run without a real client.
@@ -58,8 +59,21 @@ async function analyzeContract(contractText, options = {}) {
     model: config.anthropic.model,
     max_tokens: config.anthropic.maxTokens,
     system: SYSTEM_PROMPT,
+    // Structured outputs: the schema is enforced server-side, guaranteeing the
+    // response is valid JSON in the shape we expect.
+    output_config: {
+      format: { type: 'json_schema', schema: buildOutputJsonSchema(options) },
+    },
     messages: [{ role: 'user', content: buildAnalysisPrompt(contractText, options) }],
   });
+
+  // Safety classifiers can decline a request (HTTP 200, stop_reason "refusal").
+  if (message.stop_reason === 'refusal') {
+    const e = new Error('Model refused the request');
+    e.status = 422;
+    e.publicMessage = 'The analysis service declined to process this document.';
+    throw e;
+  }
 
   const textBlock = message.content.find((b) => b.type === 'text');
   const rawText = textBlock ? textBlock.text : '';

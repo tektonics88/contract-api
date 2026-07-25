@@ -23,10 +23,10 @@ protections, and an overall risk level with plain-English reasoning.
 POST /analyze
   → API-key auth (Supabase lookup)
   → per-key rate limit
-  → resolve contract text (parse PDF upload OR read JSON text)
-  → send to Claude with a structured risk-analysis prompt
-  → parse structured JSON, log usage
-  → return the report
+  → resolve contract text (parse PDF/DOCX upload OR read JSON text)
+  → send to Claude with a schema-constrained risk-analysis prompt (structured outputs)
+  → parse the guaranteed-valid JSON; verify every excerpt against the source
+  → log usage, return the report
 ```
 
 ## Project structure
@@ -223,6 +223,27 @@ curl -X POST localhost:3000/analyze \
         "recommendation": "Negotiate a mutual, reasonable liability cap."
       }
     ],
+    "key_dates": [
+      {
+        "event": "Auto-renewal / non-renewal notice deadline",
+        "date": null,
+        "timing": "90 days before the end of the then-current term",
+        "type": "notice_deadline",
+        "excerpt": "written notice of non-renewal no later than ninety (90) days prior to the end of the then-current term",
+        "location": { "char_start": 512, "char_end": 610 },
+        "excerpt_verified": true
+      }
+    ],
+    "obligations": [
+      {
+        "party": "Client",
+        "obligation": "Pay all invoices within 15 days of receipt; late amounts accrue 1.5%/month interest.",
+        "timing": "Within 15 days of each invoice",
+        "excerpt": "Client shall pay all invoices within fifteen (15) days of receipt.",
+        "location": { "char_start": 980, "char_end": 1045 },
+        "excerpt_verified": true
+      }
+    ],
     "playbook_findings": [
       {
         "rule": "Liability must be capped at no more than 12 months of fees.",
@@ -243,6 +264,9 @@ curl -X POST localhost:3000/analyze \
 - **`location` + `excerpt_verified`** — every excerpt is located in the source text **server-side**. `location` gives character offsets a UI can highlight; `excerpt_verified: false` means the excerpt could not be found in the source (a signal the model may have paraphrased it). `citation_summary` totals this per response.
 - **`playbook_findings`** — per-rule compliance against your own standards, not just generic risk.
 - **`suggested_redline`** (when `include_redlines: true`) — ready-to-paste replacement/added contract language for each risky clause and violated policy.
+- **`key_dates` + `obligations`** — beyond risk, the actionable data: renewal/notice deadlines, payment due dates, milestones, and each party's ongoing duties (with dates where determinable). Feeds reminders and contract-lifecycle tracking. Their excerpts are citation-verified too.
+
+**Schema-guaranteed output:** responses use Claude's structured outputs, so the `result` object is always valid JSON conforming to a fixed schema — no parse-failure surprises for integrators.
 
 > The response is not legal advice — see the `disclaimer` field returned with every analysis.
 

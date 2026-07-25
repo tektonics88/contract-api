@@ -70,6 +70,8 @@ function anchorAnalysis(analysis, contractText) {
 
   if (Array.isArray(analysis.clauses)) analysis.clauses.forEach(anchor);
   if (Array.isArray(analysis.playbook_findings)) analysis.playbook_findings.forEach(anchor);
+  if (Array.isArray(analysis.key_dates)) analysis.key_dates.forEach(anchor);
+  if (Array.isArray(analysis.obligations)) analysis.obligations.forEach(anchor);
 
   analysis.citation_summary = {
     total_excerpts: total,

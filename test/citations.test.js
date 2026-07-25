@@ -66,6 +66,18 @@ test('anchorAnalysis: verifies excerpts and builds an accurate summary', () => {
   });
 });
 
+test('anchorAnalysis: also anchors key_dates and obligations excerpts', () => {
+  const analysis = {
+    key_dates: [{ event: 'Renewal', excerpt: 'The Provider' }], // verifiable
+    obligations: [{ party: 'Client', excerpt: 'nonexistent duty text' }], // not present
+  };
+  anchorAnalysis(analysis, TEXT);
+  assert.equal(analysis.key_dates[0].excerpt_verified, true);
+  assert.ok(analysis.key_dates[0].location);
+  assert.equal(analysis.obligations[0].excerpt_verified, false);
+  assert.deepEqual(analysis.citation_summary, { total_excerpts: 2, verified: 1, unverified: 1 });
+});
+
 test('anchorAnalysis: tolerates missing arrays and non-objects', () => {
   const empty = anchorAnalysis({}, TEXT);
   assert.deepEqual(empty.citation_summary, { total_excerpts: 0, verified: 0, unverified: 0 });

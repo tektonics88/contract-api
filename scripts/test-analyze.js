@@ -76,6 +76,18 @@ function summarizeResult(result) {
     const withRedline = clauses.filter((c) => c.suggested_redline).length;
     if (withRedline > 0) pass(`${withRedline} clause(s) include a suggested_redline`);
   }
+  if (Array.isArray(result.key_dates)) {
+    pass(`${result.key_dates.length} key date(s) extracted`);
+    console.log(
+      result.key_dates
+        .slice(0, 5)
+        .map((d) => `      - [${d.type}] ${d.event} — ${d.date || d.timing}`)
+        .join('\n')
+    );
+  }
+  if (Array.isArray(result.obligations)) {
+    pass(`${result.obligations.length} obligation(s) extracted`);
+  }
   if (result.citation_summary) {
     const cs = result.citation_summary;
     pass(`citations: ${cs.verified}/${cs.total_excerpts} excerpts verified against source`);
