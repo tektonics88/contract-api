@@ -13,7 +13,7 @@ protections, and an overall risk level with plain-English reasoning.
 
 - **Node.js + Express** — small, single-language stack
 - **Claude API** (`@anthropic-ai/sdk`) — the analysis engine
-- **pdf-parse** — text extraction from PDF uploads
+- **pdf-parse** / **mammoth** — text extraction from PDF and Word `.docx` uploads
 - **Supabase (Postgres)** — users, API keys, usage logs
 - **express-rate-limit** — per-API-key rate limiting
 
@@ -37,10 +37,12 @@ contract-api/
 │   └── schema.sql              # Supabase/Postgres tables (run once)
 ├── samples/
 │   ├── sample-contract.txt     # a deliberately risky sample contract
-│   └── sample-contract.pdf     # PDF version (generated from the .txt)
+│   ├── sample-contract.pdf     # PDF version (generated from the .txt)
+│   └── sample-contract.docx    # DOCX version (generated from the .txt)
 ├── scripts/
 │   ├── create-api-key.js       # provision a user + issue an API key
 │   ├── make-sample-pdf.js      # regenerate sample-contract.pdf
+│   ├── make-sample-docx.js     # regenerate sample-contract.docx
 │   └── test-analyze.js         # end-to-end smoke test
 └── src/
     ├── index.js                # server bootstrap
@@ -139,12 +141,12 @@ curl -X POST localhost:3000/analyze \
   -d '{"text": "MASTER SERVICES AGREEMENT ..."}'
 ```
 
-PDF upload (multipart, field name `file`):
+File upload — **PDF or Word `.docx`** (multipart, field name `file`):
 
 ```bash
 curl -X POST localhost:3000/analyze \
   -H "Authorization: Bearer sk_your_key" \
-  -F "file=@samples/sample-contract.pdf"
+  -F "file=@samples/sample-contract.pdf"      # or sample-contract.docx
 ```
 
 **Optional parameters** (JSON body fields, or multipart form fields alongside `file`):
@@ -154,6 +156,7 @@ curl -X POST localhost:3000/analyze \
 | `contract_type` | string | Analyze as this type (e.g. `"NDA"`, `"MSA"`). If omitted, the type is auto-detected and returned in `result.contract_type`. |
 | `party_side` | string | Analyze from this party's perspective (e.g. `"Client"`, `"Employee"`, `"Buyer"`). If omitted, defaults to the party being asked to sign. |
 | `playbook` | string \| string[] | Your policy positions. Each is checked against the contract and returned in `result.playbook_findings` as `meets` / `violates` / `not_addressed`. Accepts a free-text block or an array of rule strings. |
+| `include_redlines` | boolean | When `true`, each flagged clause (and each violated playbook finding) gets a `suggested_redline` — ready-to-paste replacement/added contract language. Off by default (saves tokens). |
 
 ```bash
 curl -X POST localhost:3000/analyze \
@@ -229,6 +232,7 @@ curl -X POST localhost:3000/analyze \
 - **`confidence`** (per clause) — the model's confidence the finding is accurate, for triage.
 - **`location` + `excerpt_verified`** — every excerpt is located in the source text **server-side**. `location` gives character offsets a UI can highlight; `excerpt_verified: false` means the excerpt could not be found in the source (a signal the model may have paraphrased it). `citation_summary` totals this per response.
 - **`playbook_findings`** — per-rule compliance against your own standards, not just generic risk.
+- **`suggested_redline`** (when `include_redlines: true`) — ready-to-paste replacement/added contract language for each risky clause and violated policy.
 
 > The response is not legal advice — see the `disclaimer` field returned with every analysis.
 

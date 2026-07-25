@@ -4,6 +4,7 @@ const express = require('express');
 const multer = require('multer');
 const config = require('../config');
 const { extractTextFromPdf } = require('../services/pdf');
+const { extractTextFromDocx } = require('../services/docx');
 const { analyzeContract } = require('../services/claude');
 const { anchorAnalysis } = require('../services/citations');
 const { DISCLAIMER } = require('../services/prompt');
@@ -78,7 +79,10 @@ function parseOptions(req) {
     playbook = playbook.slice(0, MAX_PLAYBOOK_LENGTH);
   }
 
-  return { contractType, partySide, playbook };
+  // Accepts JSON boolean true or the string "true" (multipart form field).
+  const includeRedlines = body.include_redlines === true || body.include_redlines === 'true';
+
+  return { contractType, partySide, playbook, includeRedlines };
 }
 
 /**
@@ -86,19 +90,29 @@ function parseOptions(req) {
  * "file") or a JSON/text body. Returns { text, source }.
  */
 async function resolveContractText(req) {
-  // 1. PDF upload (multipart form-data, field name "file").
+  // 1. File upload (multipart form-data, field name "file") — PDF or DOCX.
   if (req.file) {
-    const isPdf =
-      req.file.mimetype === 'application/pdf' ||
-      req.file.originalname.toLowerCase().endsWith('.pdf');
-    if (!isPdf) {
-      const e = new Error('Uploaded file is not a PDF');
-      e.status = 400;
-      e.publicMessage = 'Only PDF files are supported for upload. For other text, send it in the request body.';
-      throw e;
+    const name = req.file.originalname.toLowerCase();
+    const isPdf = req.file.mimetype === 'application/pdf' || name.endsWith('.pdf');
+    const isDocx =
+      req.file.mimetype ===
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+      name.endsWith('.docx');
+
+    if (isPdf) {
+      const text = await extractTextFromPdf(req.file.buffer);
+      return { text, source: 'pdf' };
     }
-    const text = await extractTextFromPdf(req.file.buffer);
-    return { text, source: 'pdf' };
+    if (isDocx) {
+      const text = await extractTextFromDocx(req.file.buffer);
+      return { text, source: 'docx' };
+    }
+
+    const e = new Error('Unsupported file type');
+    e.status = 400;
+    e.publicMessage =
+      'Only PDF and Word (.docx) files are supported for upload. For other text, send it in the request body.';
+    throw e;
   }
 
   // 2. Raw text — either JSON { "text": "..." } or a text/plain body.
@@ -164,6 +178,7 @@ router.post('/', requireApiKey, apiKeyRateLimiter, upload.single('file'), async 
         contract_type: options.contractType || null,
         party_side: options.partySide || null,
         playbook_provided: Boolean(options.playbook),
+        redlines_included: Boolean(options.includeRedlines),
       },
       disclaimer: DISCLAIMER,
       result: analysis,

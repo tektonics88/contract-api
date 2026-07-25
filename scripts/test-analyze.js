@@ -26,6 +26,7 @@ const path = require('path');
 const BASE = process.env.API_BASE_URL || 'http://localhost:3000';
 const API_KEY = process.env.API_KEY || '';
 const PDF_PATH = path.join(__dirname, '..', 'samples', 'sample-contract.pdf');
+const DOCX_PATH = path.join(__dirname, '..', 'samples', 'sample-contract.docx');
 const TXT_PATH = path.join(__dirname, '..', 'samples', 'sample-contract.txt');
 
 let failures = 0;
@@ -58,7 +59,8 @@ function summarizeResult(result) {
         .map(
           (c) =>
             `      - [${c.risk_level}/conf:${c.confidence}] ${c.clause_type}` +
-            `${c.section ? ` (${c.section})` : ''} ${c.excerpt_verified ? '✓cited' : '⚠unverified'}`
+            `${c.section ? ` (${c.section})` : ''} ${c.excerpt_verified ? '✓cited' : '⚠unverified'}` +
+            `${c.suggested_redline ? ' ✎redline' : ''}`
         )
         .join('\n')
     );
@@ -69,6 +71,10 @@ function summarizeResult(result) {
     pass(`${missing_protections.length} missing protection(s) noted`);
   } else {
     fail('missing_protections missing');
+  }
+  if (Array.isArray(clauses)) {
+    const withRedline = clauses.filter((c) => c.suggested_redline).length;
+    if (withRedline > 0) pass(`${withRedline} clause(s) include a suggested_redline`);
   }
   if (result.citation_summary) {
     const cs = result.citation_summary;
@@ -124,6 +130,7 @@ async function testText() {
       text: contract,
       contract_type: 'Master Services Agreement',
       party_side: 'Client (the party being asked to sign)',
+      include_redlines: true,
       playbook: [
         'Liability must be capped at no more than 12 months of fees.',
         'We require at least 30 days notice for termination for convenience.',
@@ -162,6 +169,31 @@ async function testPdf() {
   summarizeResult(body.result);
 }
 
+async function testDocx() {
+  console.log('\n[5] POST /analyze with DOCX upload');
+  const buf = fs.readFileSync(DOCX_PATH);
+  const form = new FormData();
+  form.append(
+    'file',
+    new Blob([buf], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    }),
+    'sample-contract.docx'
+  );
+  const r = await fetch(`${BASE}/analyze`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: form,
+  });
+  const body = await r.json();
+  if (r.status !== 200) {
+    fail(`expected 200, got ${r.status}: ${JSON.stringify(body)}`);
+    return;
+  }
+  pass(`HTTP 200 (source=${body.source}, chars=${body.characters_analyzed})`);
+  summarizeResult(body.result);
+}
+
 async function main() {
   console.log(`Contract Review API — end-to-end test`);
   console.log(`Target: ${BASE}   Auth: ${API_KEY ? 'on (API_KEY set)' : 'off (no API_KEY)'}`);
@@ -170,6 +202,7 @@ async function main() {
   await testNoAuth();
   await testText();
   await testPdf();
+  await testDocx();
 
   console.log(`\n${failures === 0 ? '✅ All checks passed.' : `❌ ${failures} check(s) failed.`}`);
   process.exit(failures === 0 ? 0 : 1);

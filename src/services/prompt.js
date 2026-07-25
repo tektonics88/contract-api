@@ -44,10 +44,21 @@ const SYSTEM_PROMPT =
   'or diligence, not formal legal advice.';
 
 /**
- * Builds the JSON output schema description. `hasPlaybook` toggles the
- * playbook_findings array.
+ * Builds the JSON output schema description.
+ * @param {boolean} hasPlaybook toggles the playbook_findings array
+ * @param {boolean} includeRedlines toggles the suggested_redline fields
  */
-function buildOutputSchema(hasPlaybook) {
+function buildOutputSchema(hasPlaybook, includeRedlines) {
+  const clauseRedline = includeRedlines
+    ? `,
+      "suggested_redline": "proposed replacement or additional contract language that would reduce this risk, written so it could be pasted into the contract; null if not applicable"`
+    : '';
+
+  const playbookRedline = includeRedlines
+    ? `,
+      "suggested_redline": "proposed contract language that would bring this in line with the policy position; null if status is 'meets' or not applicable"`
+    : '';
+
   const playbookBlock = hasPlaybook
     ? `,
   "playbook_findings": [
@@ -56,7 +67,7 @@ function buildOutputSchema(hasPlaybook) {
       "status": "meets|violates|not_addressed",
       "excerpt": "verbatim contract text relevant to this rule (max 50 words), or null if not_addressed",
       "explanation": "plain-English explanation of how the contract does or does not satisfy this position",
-      "recommendation": "what to change or add to bring the contract in line with the position"
+      "recommendation": "what to change or add to bring the contract in line with the position"${playbookRedline}
     }
   ]`
     : '';
@@ -75,7 +86,7 @@ function buildOutputSchema(hasPlaybook) {
       "section": "where this appears if identifiable, e.g. 'Section 8.2'; use null if you cannot tell",
       "excerpt": "the relevant verbatim text copied EXACTLY from the contract (max 50 words)",
       "explanation": "plain-English explanation of why this is or isn't risky, for someone without a legal background",
-      "recommendation": "a concrete, plain-English suggested action"
+      "recommendation": "a concrete, plain-English suggested action"${clauseRedline}
     }
   ],
   "missing_protections": [
@@ -93,11 +104,11 @@ The "excerpt" fields must be copied VERBATIM from the contract text — do not p
 /**
  * Builds the user message sent to Claude.
  * @param {string} contractText
- * @param {{contractType?: string, partySide?: string, playbook?: string}} [options]
+ * @param {{contractType?: string, partySide?: string, playbook?: string, includeRedlines?: boolean}} [options]
  * @returns {string}
  */
 function buildAnalysisPrompt(contractText, options = {}) {
-  const { contractType, partySide, playbook } = options;
+  const { contractType, partySide, playbook, includeRedlines } = options;
 
   const perspective = partySide
     ? `Analyze the contract from the perspective of: ${partySide}. Flag what is risky or unfavorable for that party specifically.`
@@ -129,9 +140,13 @@ For each clause found, provide: the clause_type, a risk_level, your confidence, 
 
 Also flag any STANDARD protections that appear to be MISSING for this type of contract (e.g., no liability cap at all, no termination-for-convenience clause), each with an explanation and a recommendation.
 
-Finally, provide an overall_risk_level (low/medium/high) and a 2-3 sentence overall_summary.${playbookBlock}
+Finally, provide an overall_risk_level (low/medium/high) and a 2-3 sentence overall_summary.${playbookBlock}${
+    includeRedlines
+      ? '\n\nFor each flagged clause (and each playbook finding that is violated), also provide a "suggested_redline": concrete replacement or additional contract language, written so it could be pasted directly into the contract to reduce the risk or satisfy the policy.'
+      : ''
+  }
 
-${buildOutputSchema(Boolean(playbook))}
+${buildOutputSchema(Boolean(playbook), Boolean(includeRedlines))}
 
 Contract text follows:
 ---
